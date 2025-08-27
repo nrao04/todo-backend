@@ -1,18 +1,40 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
+import { validateRequest, validateParams } from '../middleware/validation';
+import { TASK_CONSTRAINTS, TASK_COLORS, STATUS_MESSAGES } from '../constants';
 
 const router = Router();
 
 // Validation schemas
 const createTaskSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
-  color: z.string().min(1, 'Color is required').max(50, 'Color too long'),
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(
+      TASK_CONSTRAINTS.TITLE_MAX_LENGTH,
+      `Title must be ${TASK_CONSTRAINTS.TITLE_MAX_LENGTH} characters or less`
+    ),
+  color: z.string().refine((val) => TASK_COLORS.includes(val as any), {
+    message: `Color must be one of: ${TASK_COLORS.join(', ')}`,
+  }),
 });
 
 const updateTaskSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(255, 'Title too long').optional(),
-  color: z.string().min(1, 'Color is required').max(50, 'Color too long').optional(),
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(
+      TASK_CONSTRAINTS.TITLE_MAX_LENGTH,
+      `Title must be ${TASK_CONSTRAINTS.TITLE_MAX_LENGTH} characters or less`
+    )
+    .optional(),
+  color: z
+    .string()
+    .refine((val) => TASK_COLORS.includes(val as any), {
+      message: `Color must be one of: ${TASK_COLORS.join(', ')}`,
+    })
+    .optional(),
   completed: z.boolean().optional(),
 });
 
@@ -31,7 +53,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // POST /api/tasks - Create a new task
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', validateRequest(createTaskSchema), async (req: Request, res: Response) => {
   try {
     const validatedData = createTaskSchema.parse(req.body);
 
@@ -54,7 +76,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // PUT /api/tasks/:id - Update a task
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', validateRequest(updateTaskSchema), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const validatedData = updateTaskSchema.parse(req.body);
