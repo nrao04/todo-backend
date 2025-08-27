@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { validateRequest, validateParams } from '../middleware/validation';
 import { TASK_CONSTRAINTS, TASK_COLORS, STATUS_MESSAGES } from '../constants';
+import { taskService } from '../services/taskService';
+import { sendSuccess, sendCreated, sendNoContent, sendError } from '../utils/response';
 
 const router = Router();
 
@@ -41,37 +43,55 @@ const updateTaskSchema = z.object({
 // GET /api/tasks - Get all tasks
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const tasks = await prisma.task.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-
-    res.json(tasks);
+    const tasks = await taskService.getAllTasks();
+    sendSuccess(res, tasks, 'Tasks retrieved successfully');
   } catch (error) {
     console.error('Error fetching tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch tasks' });
+    sendError(res, 'Failed to fetch tasks', 500);
+  }
+});
+
+// GET /api/tasks/stats - Get task statistics
+router.get('/stats', async (req: Request, res: Response) => {
+  try {
+    const stats = await taskService.getTaskStats();
+    sendSuccess(res, stats, 'Task statistics retrieved successfully');
+  } catch (error) {
+    console.error('Error fetching task stats:', error);
+    sendError(res, 'Failed to fetch task statistics', 500);
+  }
+});
+
+// GET /api/tasks/completed - Get completed tasks
+router.get('/completed', async (req: Request, res: Response) => {
+  try {
+    const tasks = await taskService.getTasksByStatus(true);
+    sendSuccess(res, tasks, 'Completed tasks retrieved successfully');
+  } catch (error) {
+    console.error('Error fetching completed tasks:', error);
+    sendError(res, 'Failed to fetch completed tasks', 500);
+  }
+});
+
+// GET /api/tasks/pending - Get pending tasks
+router.get('/pending', async (req: Request, res: Response) => {
+  try {
+    const tasks = await taskService.getTasksByStatus(false);
+    sendSuccess(res, tasks, 'Pending tasks retrieved successfully');
+  } catch (error) {
+    console.error('Error fetching pending tasks:', error);
+    sendError(res, 'Failed to fetch pending tasks', 500);
   }
 });
 
 // POST /api/tasks - Create a new task
 router.post('/', validateRequest(createTaskSchema), async (req: Request, res: Response) => {
   try {
-    const validatedData = createTaskSchema.parse(req.body);
-
-    const task = await prisma.task.create({
-      data: {
-        title: validatedData.title,
-        color: validatedData.color,
-      },
-    });
-
-    res.status(201).json(task);
+    const task = await taskService.createTask(req.body);
+    sendCreated(res, task, STATUS_MESSAGES.TASK_CREATED);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.issues[0].message });
-    }
-
     console.error('Error creating task:', error);
-    res.status(500).json({ error: 'Failed to create task' });
+    sendError(res, 'Failed to create task', 500);
   }
 });
 
@@ -79,25 +99,15 @@ router.post('/', validateRequest(createTaskSchema), async (req: Request, res: Re
 router.put('/:id', validateRequest(updateTaskSchema), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const validatedData = updateTaskSchema.parse(req.body);
-
-    const task = await prisma.task.update({
-      where: { id },
-      data: validatedData,
-    });
-
-    res.json(task);
+    const task = await taskService.updateTask(id, req.body);
+    sendSuccess(res, task, STATUS_MESSAGES.TASK_UPDATED);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.issues[0].message });
-    }
-
-    if (error instanceof Error && error.message.includes('Record to update not found')) {
-      return res.status(404).json({ error: 'Task not found' });
+    if (error instanceof Error && error.message.includes('Task not found')) {
+      return sendError(res, STATUS_MESSAGES.TASK_NOT_FOUND, 404);
     }
 
     console.error('Error updating task:', error);
-    res.status(500).json({ error: 'Failed to update task' });
+    sendError(res, 'Failed to update task', 500);
   }
 });
 
@@ -105,19 +115,15 @@ router.put('/:id', validateRequest(updateTaskSchema), async (req: Request, res: 
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    await prisma.task.delete({
-      where: { id },
-    });
-
-    res.status(204).send();
+    await taskService.deleteTask(id);
+    sendNoContent(res);
   } catch (error) {
     if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
-      return res.status(404).json({ error: 'Task not found' });
+      return sendError(res, STATUS_MESSAGES.TASK_NOT_FOUND, 404);
     }
 
     console.error('Error deleting task:', error);
-    res.status(500).json({ error: 'Failed to delete task' });
+    sendError(res, 'Failed to delete task', 500);
   }
 });
 
@@ -125,24 +131,15 @@ router.delete('/:id', async (req: Request, res: Response) => {
 router.patch('/:id/toggle', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    const currentTask = await prisma.task.findUnique({
-      where: { id },
-    });
-
-    if (!currentTask) {
-      return res.status(404).json({ error: 'Task not found' });
+    const task = await taskService.toggleTaskCompletion(id);
+    sendSuccess(res, task, 'Task completion toggled successfully');
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Task not found')) {
+      return sendError(res, STATUS_MESSAGES.TASK_NOT_FOUND, 404);
     }
 
-    const task = await prisma.task.update({
-      where: { id },
-      data: { completed: !currentTask.completed },
-    });
-
-    res.json(task);
-  } catch (error) {
     console.error('Error toggling task:', error);
-    res.status(500).json({ error: 'Failed to toggle task' });
+    sendError(res, 'Failed to toggle task', 500);
   }
 });
 
