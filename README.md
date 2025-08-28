@@ -9,7 +9,7 @@ A robust, TypeScript-based backend API for a Todo List application built with Ex
 - **Task Statistics** (total, completed, pending counts)
 - **Filtered Task Views** (completed, pending)
 - **Due Date Management** - set and edit task deadlines
-- **Priority Levels** - low, medium, high, urgent
+- **Priority Levels** - low, medium, high
 - **Task Descriptions** - optional detailed notes
 - **Input Validation** using Zod schemas
 - **Error Handling** with production/development modes
@@ -148,7 +148,7 @@ Content-Type: application/json
 
 {
   "dueDate": "2024-01-25T23:59:59.000Z",
-  "priority": "urgent"
+  "priority": "high"
 }
 ```
 
@@ -179,7 +179,7 @@ GET /api/tasks/stats
 Color is automatically assigned (default: blue). The backend supports multiple colors but users don't need to select them.
 
 ### Priorities
-Priority levels: `low`, `medium`, `high`, `urgent`
+Priority levels: `low`, `medium`, `high`
 
 ### Due Dates
 Due dates accept ISO 8601 datetime strings (e.g., "2024-01-20T23:59:59.000Z")
