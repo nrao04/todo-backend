@@ -11,12 +11,15 @@ datasource db {
 }
 
 model Task {
-  id        String   @id @default(cuid())
-  title     String   @db.VarChar(255)
-  color     String   @default("blue") @db.VarChar(50)
-  completed Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(255)
+  color       String    @default("blue") @db.VarChar(50)
+  description String?   @db.Text
+  dueDate     DateTime?
+  priority    String    @default("medium") @db.VarChar(20)
+  completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("tasks")
 }

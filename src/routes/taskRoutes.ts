@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { validateRequest, validateParams } from '../middleware/validation';
-import { TASK_CONSTRAINTS, TASK_COLORS, STATUS_MESSAGES } from '../constants';
+import { TASK_CONSTRAINTS, TASK_COLORS, TASK_PRIORITIES, STATUS_MESSAGES } from '../constants';
 import { taskService } from '../services/taskService';
 import { sendSuccess, sendCreated, sendNoContent, sendError } from '../utils/response';
 
@@ -20,6 +20,17 @@ const createTaskSchema = z.object({
   color: z.string().refine((val) => TASK_COLORS.includes(val as any), {
     message: `Color must be one of: ${TASK_COLORS.join(', ')}`,
   }),
+  description: z
+    .string()
+    .max(TASK_CONSTRAINTS.DESCRIPTION_MAX_LENGTH, 'Description too long')
+    .optional(),
+  dueDate: z.string().datetime('Invalid date format').optional(),
+  priority: z
+    .string()
+    .refine((val) => TASK_PRIORITIES.includes(val as any), {
+      message: `Priority must be one of: ${TASK_PRIORITIES.join(', ')}`,
+    })
+    .optional(),
 });
 
 const updateTaskSchema = z.object({
@@ -35,6 +46,17 @@ const updateTaskSchema = z.object({
     .string()
     .refine((val) => TASK_COLORS.includes(val as any), {
       message: `Color must be one of: ${TASK_COLORS.join(', ')}`,
+    })
+    .optional(),
+  description: z
+    .string()
+    .max(TASK_CONSTRAINTS.DESCRIPTION_MAX_LENGTH, 'Description too long')
+    .optional(),
+  dueDate: z.string().datetime('Invalid date format').optional(),
+  priority: z
+    .string()
+    .refine((val) => TASK_PRIORITIES.includes(val as any), {
+      message: `Priority must be one of: ${TASK_PRIORITIES.join(', ')}`,
     })
     .optional(),
   completed: z.boolean().optional(),
@@ -81,6 +103,23 @@ router.get('/pending', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching pending tasks:', error);
     sendError(res, 'Failed to fetch pending tasks', 500);
+  }
+});
+
+// GET /api/tasks/:id - Get single task by ID
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const task = await taskService.getTaskById(id);
+
+    if (!task) {
+      return sendError(res, STATUS_MESSAGES.TASK_NOT_FOUND, 404);
+    }
+
+    sendSuccess(res, task, 'Task retrieved successfully');
+  } catch (error) {
+    console.error('Error fetching task:', error);
+    sendError(res, 'Failed to fetch task', 500);
   }
 });
 

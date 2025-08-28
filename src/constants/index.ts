@@ -8,7 +8,9 @@ export const API_ENDPOINTS = {
 export const TASK_CONSTRAINTS = {
   TITLE_MAX_LENGTH: 255,
   COLOR_MAX_LENGTH: 50,
+  DESCRIPTION_MAX_LENGTH: 1000,
   DEFAULT_COLOR: 'blue',
+  DEFAULT_PRIORITY: 'medium',
 } as const;
 
 // HTTP Status Messages
@@ -34,3 +36,8 @@ export const TASK_COLORS = [
 ] as const;
 
 export type TaskColor = (typeof TASK_COLORS)[number];
+
+// Priority Options for Tasks
+export const TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
+
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];

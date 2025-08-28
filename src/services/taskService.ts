@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { Task, CreateTaskRequest, UpdateTaskRequest } from '../types';
+import { TASK_CONSTRAINTS } from '../constants';
 
 export class TaskService {
   async getAllTasks(): Promise<Task[]> {
@@ -19,14 +20,24 @@ export class TaskService {
       data: {
         title: data.title,
         color: data.color,
+        description: data.description,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        priority: data.priority || TASK_CONSTRAINTS.DEFAULT_PRIORITY,
       },
     });
   }
 
   async updateTask(id: string, data: UpdateTaskRequest): Promise<Task> {
+    const updateData: any = { ...data };
+
+    // Convert dueDate string to Date object if provided
+    if (data.dueDate) {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+
     return await prisma.task.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 
