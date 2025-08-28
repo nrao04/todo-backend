@@ -8,7 +8,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 
   // Log request body for non-GET requests
   if (req.method !== 'GET' && req.body && Object.keys(req.body).length > 0) {
-    console.log(`📝 Request Body:`, JSON.stringify(req.body, null, 2));
+    console.log(` Request Body:`, JSON.stringify(req.body, null, 2));
   }
 
   // Log response time and status

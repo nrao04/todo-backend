@@ -53,6 +53,6 @@ export const validateEnvironment = (): void => {
   console.log(` Environment: ${process.env.NODE_ENV}`);
   console.log(` Port: ${process.env.PORT}`);
   console.log(
-    `  Database: ${process.env.DATABASE_URL.split('@')[1]?.split('/')[0] || 'configured'}`
+    ` Database: ${process.env.DATABASE_URL.split('@')[1]?.split('/')[0] || 'configured'}`
   );
 };

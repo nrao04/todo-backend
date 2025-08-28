@@ -43,10 +43,10 @@ app.use((req, res) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔒 Security headers enabled`);
-  console.log(`📝 Request logging enabled`);
+  console.log(` Server running on port ${PORT}`);
+  console.log(` Health check: http://localhost:${PORT}/health`);
+  console.log(` Security headers enabled`);
+  console.log(` Request logging enabled`);
 });
 
 // Setup graceful shutdown
